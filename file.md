@@ -395,3 +395,71 @@ class File:
 ```
 - \_\_init\_\_(self)，构造函数，初始化
 - self，代表对象本身，当display_info方法被调用，self 就指向那个调用它的具体的实例
+
+#### 继承、多态
+继承：就像遗传学，子类会继承父类的属性和方法，父类就是基类，子类就是派生类
+且子类可以对从父类继承过来的方法进行重写
+super()召唤父辈的力量
+
+多态：下达同一个命令，但可以得到不同的响应，也就是不同的子类，调用同一个方法，表现出不同的行为
+
+```python
+class File:
+    def __init__(self, filename, filesize):
+        self.name = filename
+        self.size_in_bytes = filesize
+        print(f"一个通用的文件对象 '{self.name}' 被创建了。")
+
+    def display_info(self):
+        print(f"--- 文件: {self.name} ---")
+        print(f"大小: {self.size_in_bytes} Bytes")
+
+class ExecutableFile(File):  # 继承自File类
+    def __init__(self, filename, filesize, imported_dlls):
+        # 使用super()调用父类的__init__来初始化通用属性
+        super().__init__(filename, filesize)
+        # 添加子类独有的属性
+        self.imported_dlls = imported_dlls
+        print("  -> 它是一个可执行文件。")
+
+    # 重写父类的display_info方法
+    def display_info(self):
+        super().display_info()
+        print(f"导入的DLL: {self.imported_dlls}")
+
+class TextFile(File):  # 继承自File类
+    def __init__(self, filename, filesize, encoding):
+        super().__init__(filename, filesize)
+        self.encoding = encoding
+        print("  -> 它是一个文本文件。")
+
+    # 重写display_info方法
+    def display_info(self):
+        super().display_info()
+        print(f"编码格式: {self.encoding}")
+
+exe_file = ExecutableFile("malware.exe", 20480, ["kernel32.dll", "user32.dll"])
+txt_file = TextFile("readme.txt", 1024, "UTF-8")
+
+print("\n--- 多态演示 ---")
+all_files = [exe_file, txt_file]
+
+for f in all_files:
+    f.display_info()
+    print("-" * 20)
+```
+
+#### 封装与特殊方法
+封装的核心思想：
+- 将属性和方法捆绑在一起，通过 class 完成了
+- 隐藏内部状态，对外暴露安全的接口交互
+就像开车一样，汽车只给你留下了方向盘，油门刹车和挂档，这都是安全的接口，你不用也不应该去看内部如何实现的这个功能，因为可能会出问题
+
+Python 没有强制的 private 权限等，不严格，君子的约定
+- _下划线开头的，比如self._name，说明这是一个内部属性，不要外部调用
+- 两个下划线的 ，会触发名字改编，在外部无法访问，是个伪私有，通过其他手段还是可以访问
+
+特殊方法：
+- \_\_str\_\_(self)，对一个对象 print 或者 str 的时候，自动调用
+- len(self)，对一个对象使用 len 的时候
+- repr(self)，在交互式终端输入对象名且直接回车的时候
