@@ -10,11 +10,47 @@
 
 Python是一个动态类型的，无需告诉str、int等，会自动识别
 
+且有不可变类型，比如：int、float、bool、str、tuple
+```python
+x = 10
+print(id(x))
+x = 20
+print(id(x))
+```
+上面的 2 个 x 是一个吗？其实不是，修改的时候，Python 会创建一个新的对象，然后把标签贴过去，旧数据没人用了，就会被回收
+
+像是 list、dict、set，这是可变的，添加等，都不会开辟新的地方去操作
+
+变量的作用域：LEGB
+- L: Local，局部的，在函数内定义的，外部无效
+- E: Enclosing，闭包函数外的函数作用域
+- G: Global，全局的，在函数外定义的，外部有效
+- B: Built-in，内建的，Python 内建的函数，比如 print 等
+查找也是按照 LEGB 的顺序查找
+
+如果在函数内用全局的变量，需要用到 global关键字，在内层函数修改外层函数变量，就要用 nonlocal
+
+虽然是个动态类型，但是我们可以添加类型说明
+```python
+name: str = 'xiaoming'
+```
+
+虽然不强制，但是还是有数据类型滴
+
 最常见的类型：
 - 数字
 	- int：10、-5、0
     - float：3.14、-0.5
-- 字符串str：单引号和双引号括起来的
+- 字符串str：单引号和双引号括起来的还有三引号
+- 序列
+  - list
+  - tuple
+- 映射
+  - dict
+  - set
+- bool
+- NoneType，只有一个值 None，代表空，不存在
+
 ```python
 great_str = "hello"
 g2str = "world"
@@ -24,6 +60,21 @@ print(great_str[1]) # 切片
 print(f'{great_str} {g2str}') # 格式化
 ```
 
+str 上也有一些常用的方法，加乘可以自己试一试，比较简单，其他的常用方法如下：
+- .upper()，转大写
+- .lower()，转小写
+- .title()，每个单词转大写开头
+- .capitalize()，第一个单词转大写开头
+- .find('sub')，查找 sub，返回索引，没有-1
+- .index('sub')，找不到报错
+- .startswith('pre')，判断开头
+- .endswith('suf')，判断结尾
+- .count('a')，统计 a 出现的次数
+- .strip()，去掉首尾空格,lstrip/rstrip
+- .replace('a', 'b')，替换 a 为 b
+- ''.join(iterable)，将可迭代对象连接为字符串
+- .split('delim')，将字符串按 delim 分割为列表
+
 ### 2、容器
 如果存储一组数据，就要用容器，列表、元组、字典、集合
 
@@ -32,12 +83,18 @@ print(f'{great_str} {g2str}') # 格式化
 re_tools = ["IDA Pro", "x64dbg", "Ghidra", "Wireshark"]
 ```
 访问可以用索引，比如re_tools[0]，甚至加上=去修改，或者
-- re.tools.append尾部添加
-- insert(index,value)插入
-- pop最后一个/remove匹配项删除
-- len获取长度
+- .append()尾部添加
+- .insert(index,value)插入
+- .pop()最后一个
+- .remove(item) 匹配项删除
+- .extend(list),将一个可迭代对象，比如另一个列表，追加到末尾
+- .clear()，清空
+- .sort()排序,reverse=True倒序
+- .reverse() 反转
+- .index(item) 返回 item 第一次出现的索引，找不到报错
+- .count(item) item出现的次数
 
-元组Tuple，不可变，就是一个不可变的列表()表示，其他一样
+元组Tuple，不可变，就是一个不可变的列表()表示，其他一样，常用的就是index和count
 
 
 字典Dict，{}很强大， 键值对的形式
@@ -54,8 +111,7 @@ user_profile = {
 ```python
 # 访问
 user_profile["name"] 
-
-# 修改就按上面的赋值
+# user_profile["name"] = "IDA" 赋值修改
 
 user_profile["other"] = "Cutter" # 添加
 del xxx[] # 删除
@@ -63,6 +119,13 @@ del xxx[] # 删除
 for key,value in user_profile.items():
 		print(f"key:{key},value:{value}")
 ```
+- .get(key,default=None)，通过键获取，没有就返回 default值
+- .keys() 返回包含所有键
+- .values() 包含所有值
+- .items() 包含所有键值对，元组
+- .update(dict) 用另一个字典批量更新当前字典
+- .pop(key,default) 删除且返回指定键的值，不存在且未提供 default 报错
+- .popitem()，删除并返回最后插入的键值对
 
 
 set集合，无序不可重复，没有key的字典
@@ -71,6 +134,18 @@ file_extensions = {".exe", ".dll", ".txt", ".exe", ".sys"}
 print(file_extensions)
 ```
 用来去重、in成员检测等
+- .add(item)，添加一个元素，存在什么都不做
+- .update(iterable)，添加一个可迭代对象的所有元素
+- .remove(item)，删除一个元素，不存在报错
+- .discard(item)，删除一个元素，不存在不会报错
+- .pop()，随机删除并返回一个元素
+- .clear()，清空
+
+数学运算的集合
+- .union(other_set) 或者 set1|set2，合并，去重
+- .intersection(set) 或 set1&set2，都有的部分
+- .difference(set) 或 set1-set2，set1 中 set2 里没有的
+- .symmetric_difference(set) 或 set1^set2，只在其中一个集合出现的元素
 
 ### 3、流程控制
 - if 如果，最基本的
@@ -80,10 +155,24 @@ if file_size > 1000:
 ```
 - if else，多一个分支，不成立的
 - if elif else，多个判断分支
+```python
+if user == "admin":
+    print("欢迎管理员")
+elif user == "editor":
+    print("欢迎编辑")
+else:
+    print("欢迎访客")
+```
+且可以简化三元运算符
+```python
+result = "及格" if score >= 60 else "不及格"
+```
+
 
 
 循环：
 - for 遍历
+用来循环可迭代对象，比如list/tuple/str/dict/set/range
 ```python
 re_tools = ["IDA Pro", "x64dbg", "Ghidra"]
 
@@ -94,7 +183,13 @@ for tool in re_tools:
 # range()指定次数的循环
 for i in range(5): # range(5) 会生成 0, 1, 2, 3, 4
     print(f"第 {i+1} 次循环。")
+
+# enumerate() 带索引
+for index,f in enumerate(re_tools):
+    print(f"index{index}:{f}")
 ```
+
+
 - while
 ```python
 countdown = 5
@@ -104,6 +199,59 @@ while countdown > 0:
 print("发射！")
 ```
 
+- 海象运算符 := , 3.8以后加的
+这个可以在表达式内部赋值
+```python
+while True:
+    command = input("输入指令，quit退出")
+    if command == "quit":
+        break
+    print(command)
+
+# 简化
+while(command := input("输入指令，quit退出")) != "quit":
+    print(command)
+```
+意思很明显
+
+控制循环的关键字：
+- break 跳出
+- continue 开始下次循环
+- else，循环的 else 会在循环正常结束，没有被 break 中断的时候执行
+
+match case, 3.10以后增加的，获取一个对象，将一个或者多个 case 模式比较
+```python
+def http_status(status):
+    match status:
+        case 200:
+            return "OK - Code 200"
+        case 404:
+            return "Not Found"
+        case _:
+            return "通配符，匹配其他任何情况"
+```
+甚至可以这样用
+```python
+# command = ["move", 100, 200]
+command = ["draw", "circle", {"radius": 50}]
+# command = ["quit"]
+
+match command:
+    case ["move", x, y]:
+        print(f"移动到坐标 ({x}, {y})")
+
+    case ["draw", shape, {"radius": r}]:
+        print(f"绘制图形 {shape}，半径为 {r}")
+
+    case ["draw", shape, *options]:  # *options 匹配任意多个额外项
+        print(f"绘制图形 {shape}，选项为 {options}")
+
+    case ["quit"]:
+        print("正在退出...")
+
+    case _:
+        print("未知指令")
+```
 
 ### 4、函数
 为了完成某个工作，防止每次都重复性操作，专门复用的
@@ -113,9 +261,40 @@ def get(name):
 		message = f"你好, {name}! 欢迎来到函数的世界。"
         return message
 zhangsan = greet("张三")
+# 张三就是实参
 ```
-函数有作用域，比如message，只能函数内有效，你在工厂是个官，出来工厂就普通人
-全局的就是定义在函数外的，函数可以读取全局变量，但尽量不要函数内修改
+上面的就是位置参数，一一对应
+```python
+get(name="Willy") # 顺序不重要，多个的时候有用
+```
+默认参数
+```python
+def greet(name, greeting="Hello"):
+    print(f"{greeting}, {name}!")
+```
+不传递第二个就默认 Hello
+```python
+def calculate_sum(*numbers):
+    print(f"Received numbers: {numbers}") # numbers 是一个元组
+```
+任意数量的参数
+```python
+def build_profile(**user_info):
+    print(f"Received info: {user_info}") # user_info 是一个字典
+
+name="John Doe", age=30, city="New York"
+```
+任意关键字参数
+
+3.5 以后也是，可以协商返回值类型了
+```python
+def format_greeting(name: str, age: int) -> str
+```
+还有更简洁的
+```python
+def my_func(pos_only, /, standard, *, kw_only):
+```
+/前面的参数只能通过位置传递，*后面的只能通过关键字传递
 
 ```python
 def get_file_type(filename):
@@ -146,7 +325,7 @@ print("--- 扫描结束 ---")
 ```
 练习下没事多
 
-
+还有第 9 小节的 lambda 匿名函数
 
 ### 5、导入
 现在我们已经可以把逻辑都封斋干到一个函数里了，但是若我们有成千上万的函数，一个用于检查，一个用于分析，一个用于解析，都在一个py里，变得难以维护
@@ -282,17 +461,51 @@ print(even_squares)
 ```
 稍微看一看很容易看懂，只是把语句缩写简写了
 
+还有字典推导式
+```python
+square_dict = {x:x*x for x in range(5)}，生成0:0 1:1 2:4...
+```
+
+
 生成器，更懒惰，推导式会在内存里立刻创建出一个完整的新列表，如果处理一个包含很大的列表，消耗的内存很大，生成器可以解决
 
 推导式 = 要求1000个，就立马弄1000个
-生成器 = 要求1000个，但一个都不搞，你用了，他给你你要的对应的
+生成器 = 要求1000个，但一个都不搞，你用了，他给你你要的对应的，要的时候就用next()
 
 ```python
 my_generator = (i for i in range(10000000))
 ```
 方括号变圆括号即可
+看两个大小就可以看出
+```python
+my_generator = (i for i in range(10000000))
+my_generator2 = [i for i in range(10000000)]
+print(my_generator.__sizeof__())
+print(my_generator2.__sizeof__())
+```
+还有比较复杂的时候，简单的表达式无法完成了，就要用到函数，一个函数用了yield，就成了一个生成器函数，yield和 return 不同，return 会终止函数，而yield会产出一个值，并且暂停函数执行，函数的状态（包括局部变量）会被保存下来，下次请求值的时候，函数从上次暂停的地方继续执行
+```python
+def count_up_to(max_val):
+    print("生成器开始")
+    count = 0
+    while count <= max_val:
+        yield count
+        # 产出count值，然后在这里暂停
+        # 下次调用next()的时候，从这里执行
+        count += 1
+    print("结束")
 
+counter = count_up_to(5)
+print(counter)
+```
 返回的是一个生成器对象，可迭代，用for循环遍历也没问题
+```python
+counter = count_up_to(5)
+for n in counter:
+    print(n)
+```
+或者使用next函数手动迭代，这个生成器也是一次性的，遍历完了以后，就空了，想再遍历，就要创建一个新的生成器对象
+
 ```python
 all_files = [
     "document.docx",
@@ -324,8 +537,20 @@ def定义的函数，都有函数名，让我们反复使用
 lambda 参数:表达式
 
 ```python
-lambda x: x + 5
+add = lambda x, y: x + y
+print(add(3, 4)) # 输出: 7
+
+students = [
+    {"name": "Alice", "score": 88},
+    {"name": "Bob", "score": 95},
+    {"name": "Charlie", "score": 82},
+]
+sorted_students = sorted(students, key=lambda student: student["score"], reverse=True)
+# 意思就是
+# sorted 函数排序，且是 reverse 降序
+# 依据student['score']
 ```
+lambda 追求简洁，不是强大，不要看那些故意绕弯子的
 
 高阶函数，可以接收其他的函数作为参数，或者把函数作为返回值
 - map(函数,列表)，把一个函数，依次作用于列表的每一个元素，且返回新的结果
