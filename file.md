@@ -463,3 +463,233 @@ Python 没有强制的 private 权限等，不严格，君子的约定
 - \_\_str\_\_(self)，对一个对象 print 或者 str 的时候，自动调用
 - len(self)，对一个对象使用 len 的时候
 - repr(self)，在交互式终端输入对象名且直接回车的时候
+
+构建密码检查器
+```python
+import string
+
+
+class Password:
+    def __init__(self,password_str):
+        # 封装保护属性
+        self._password = password_str
+        self._score = 0
+        self._feedback = []
+
+        # 自我分析
+        self._calc_str()
+
+    def _calc_str(self):
+        if len(self._password) >= 6:
+            self._score += 1
+        else:
+            self._feedback.append("密码长度不够")
+        
+        has_upper = any(c.isupper() for c in self._password)
+        has_lower = any(c.islower() for c in self._password)
+        has_digit = any(c.isdigit() for c in self._password)
+        has_special = any(c in string.punctuation for c in self._password)
+
+        if has_upper and has_lower and has_digit and has_special:
+            self._score += 4
+        else:
+            self._feedback.append("密码必须包含大写、小写、数字、特殊字符")
+    
+    def get_verdict(self):
+        if self._score >= 4:
+            return "密码强度高"
+        else:
+            return "密码强度低"
+    
+    def __str__(self):
+        return f"密码: '{"*" * len(self._password)}' | 强度: {self.get_verdict()}"
+    
+    def __len__(self):
+        return len(self._password)
+        
+
+test_passwords = ["12345", "abcdefgh", "ABCDEFGH", "Abcdefg1", "StrongP@ss123"]
+
+print("--- 开始进行面向对象的密码分析 ---\n")
+for pwd_str in test_passwords:
+    pwd_obj = Password(pwd_str)
+
+    # 直接打印对象，会自动调用__str__
+    print(pwd_obj)
+    # 使用len()，会自动调用__len__
+    print(f"  长度: {len(pwd_obj)}")
+
+    # 打印详细的反馈信息
+    if pwd_obj._score < 5:
+        print(f"  建议: {', '.join(pwd_obj._feedback)}")
+
+    print("-" * 35)
+```
+
+### os/sys
+- os.getcwd()，获取当前工作目录
+- os.listdir(path)，列出指定目录下的所有文件和目录
+- os.mkdir(path)，创建目录
+- os.remove(path)，删除文件
+- os.path.join(path1, path2)，拼接路径
+- os.path.exists(path)，判断路径是否存在
+- os.path.isfile(path)，判断路径是否为文件
+- os.system(command)，执行命令
+
+os和系统交互,sys和python交互
+- sys.argv，命令行参数列表
+
+一个遍历
+```python
+import os
+import sys
+
+
+def list_directory_tree(start_path, prefix=""):
+    try:
+        dir_contents = os.listdir(start_path) # 遍历目录内容
+        dir_contents.sort() # 排序
+
+        for i, item in enumerate(dir_contents):
+            full_path = os.path.join(start_path, item) # 拼接路径完整
+
+            is_last = i == len(dir_contents) - 1 # 判断是否是最后一个
+            connector = "└── " if is_last else "├── " # 连接符，如果为真，则使用└──，否则使用├──
+
+            print(prefix + connector + item) # ""+连接符+完整路径
+
+            if os.path.isdir(full_path): # 判断是否是目录
+                new_prefix = prefix + ("    " if is_last else "│   ") # 如果是就"" + 符号
+                list_directory_tree(full_path, new_prefix) # 递归调用
+
+    except PermissionError:
+        print(prefix + "└── [无权访问]")
+
+
+if len(sys.argv) > 1: # 获取命令行参数
+    root_path = sys.argv[1] # 获取第一个参数
+else:
+    root_path = "." # 也就是说如果没有命令行参数，就用当前的工作目录
+
+if not os.path.isdir(root_path):
+    print(f"错误: '{root_path}' 不是一个有效的目录。")
+    sys.exit(1) 
+
+
+print(root_path)
+list_directory_tree(root_path)
+```
+
+
+### re
+正则表达式，就是一个超级的查找工具，比如：找出所有a开头的，所有符合电话规则的，所有符合邮箱规则的
+
+核心的字符：
+- . 任意字符，除了换行符，比如a.c，能匹配abc也能a&c
+- * 匹配0个或多个，ab*c，能匹配ac abc abbbc
+- + 匹配1个或多个，ab+c，能匹配abc，abbbc，但不能ac
+- ? 匹配0个或1个，ab?c，能匹配ac，abc，但不能abbc
+- \d 匹配数字，任意一个
+- \w 匹配字母、数字、下划线
+- \s 匹配空白字符，空格、tab、换行
+- \[...\] 匹配任意一个括号内的
+- ^ 匹配开头 ，比如^Error，匹配Error开头的
+- $ 匹配结尾 ，比如Error$,匹配Error结尾的
+- {n,m} ， 匹配前一个字符n到m个，比如\d{1,3} 匹配1到3个数字
+
+模块常用的：
+- re.search(pattern, string)，匹配字符串，返回第一个匹配项，无匹配则返回None
+- re.findall(pattern, string)，返回所有匹配项，无匹配则返回[]
+
+比如做一个敏感日志提取
+```python
+import re
+
+log_data = """
+2025-07-22 INFO: User 'admin' logged in from 192.168.1.100.
+2025-07-22 ERROR: Failed to connect to server at 192.168.1.52. Contact admin@example.com.
+2025-07-22 INFO: User 'guest' made a transaction.
+2025-07-22 WARNING: Disk space is low. 25GB available.
+Email support at admin@admin.com for assistance.
+"""
+
+ip_parttern = r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
+found_ips = re.findall(ip_parttern, log_data)
+print(found_ips)
+
+email_pattern = r"\w+@\w+\.\w+"
+found_emails = re.findall(email_pattern, log_data)
+print(found_emails)
+
+err_line = r"^.*ERROR:.*$"
+found_err_lines = re.findall(err_line, log_data, re.MULTILINE)
+print(found_err_lines)
+```
+
+### socket
+前面说过ip和port，相当于地址和房间号，socket就是为了能通话，安装的那个电话插口
+
+一个程序想要网络通讯，必须先创建一个socket，socket绑定了本地的一个端口，并可以链接到远程服务器的ip和端口
+
+分服务端和客户端
+
+TCP Socket的流程：
+Server：
+- 创建一个Socket
+- 绑定到一个ip和端口，通过bind
+- 监听，通过listen
+- 接受连接，通过accept
+- 关闭socket，通过close
+- 销毁socket，通过destroy
+
+Client：
+- 创建一个Socket
+- 向服务器发送请求，通过connect
+
+Data：
+- 接收数据，通过recv
+- 发送数据，通过send
+
+服务器写法：
+```python
+import socket
+
+server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+# AF_INET: IPv4
+# SOCK_STREAM: TCP
+
+host = socket.gethostname()
+port = 12345
+server_socket.bind((host, port))
+
+server_socket.listen(5) # 监听5个连接
+print(f"Server listening on {host}:{port}")
+
+while True:
+    client_socket,addr = server_socket.accept() # 接受客户端连接
+    print(f"Connected to {addr}")
+
+    mess = "Hello, World!"
+    client_socket.send(mess.encode('utf-8')) # 发送消息给客户端
+
+    client_socket.close()
+```
+客户端写法
+```python
+import socket
+
+client_socket =  socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+host = socket.gethostname()
+port = 12345
+
+try:
+    client_socket.connect((host, port))
+    resp = client_socket.recv(1024) # 接收服务器发送的消息,1024是缓冲区大小
+    print(f"Received: {resp.decode('utf-8')}")
+except socket.error as e:
+    print(str(e))
+
+```
+
+### struct
