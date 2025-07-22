@@ -693,3 +693,164 @@ except socket.error as e:
 ```
 
 ### struct
+网络传输，不止是文本，还有结构化的二进制数据，前面我们发送的就是一个简单的字符串
+想一想，在一个网络游戏里，一个角色的数据包，是什么样子？
+和我们一样，名字、id、坐标、血量等一次次的发？
+绝对不是的，他们发送是有结构的，就想：
+- 1-4个字节是玩家的id，整数
+- 5-8个字节是x坐标，浮点
+- 9-12个字节是y坐标，浮点
+- 13-16个字节是血量，字节或其他类型
+- ...
+我们从网上收到了一串内容：b'\x01\x00\x00\x00\x00\x00\x28\x41...'
+如何翻译回本来的样子？手动撸吗？
+
+struct了解下
+- pack，把数据打包成二进制数据
+- unpack，把二进制数据解包成数据
+
+字节序：
+- < - little endian，小端序，绝大数win和intel/amd处理器都是小端序，低位存低位地址，高位存高位
+- \> or ! - big endian，大端序，arm处理器都是大端序，高位存低位，低位存高位
+
+别迷糊，比如0x12345678，这个数在计算机中存储时，会变成0x78 0x56 0x34 0x12，大端就是正常的 0x12 0x34 0x56 0x78
+
+常用的格式字符：
+- B - unsigned char - 1字节
+- h - short - 2字节
+- H - unsigned short - 2字节
+- i - int - 4字节
+- I - unsigned int - 4字节
+- q - long long - 8字节
+- Q - unsigned long long - 8字节
+上面这些在Python中不是integer，上面写的c语言的数据类型
+- f - float - 4字节
+- d - double - 8字节
+- s - char[] - 字符串，字符串长度由后面的数字决定
+Python的f和d都是float s为bytes
+
+代码如下：
+```python
+import struct
+
+# 1. 原始数据
+packet_id = 101
+player_x = 10.5
+player_y = -3.75
+player_health = 85
+
+# 2. 格式化字符串
+# < : 小端序
+# I : 4字节的无符号整数 (用于packet_id)
+# f : 4字节的浮点数 (用于player_x)
+# f : 4字节的浮点数 (用于player_y)
+# B : 1字节的无符号字符 (0-255)
+packet_format = "<IffB"
+
+# 3. 打包数据
+packed_data = struct.pack(packet_format, packet_id, player_x, player_y, player_health)
+
+print("--- 客户端发送 ---")
+print(f"原始数据: ID={packet_id}, X={player_x}, Y={player_y}, Health={player_health}")
+print(f"打包后的二进制数据: {packed_data}")
+print(f"数据包总长度: {len(packed_data)} 字节")  # 4 + 4 + 4 + 1 = 13 字节
+print("-" * 10)
+
+
+
+# 1. 解包数据
+unpacked_data_tuple = struct.unpack(packet_format, packed_data)
+
+# 2. 解包后的数据是一个元组
+print("--- 服务器接收 ---")
+print(f"解包后的元组: {unpacked_data_tuple}")
+
+# 3. 从元组中恢复原始数据
+recv_id = unpacked_data_tuple[0]
+recv_x = unpacked_data_tuple[1]
+recv_y = unpacked_data_tuple[2]
+recv_health = unpacked_data_tuple[3]
+
+print(f"成功恢复数据: ID={recv_id}, X={recv_x}, Y={recv_y}, Health={recv_health}")
+```
+
+### 综合利用
+解析简单的bmp文件
+bmp的文件头结构基本如下：
+- 偏移0 2字节 文件前面，必须是BM
+- 偏移2 4字节 文件的大小
+- 偏移6 4字节 保留字段
+- 偏移10 4字节 像素数据起始的偏移
+  
+信息头：
+- 偏移14 4字节 信息头的大小
+- 偏移18 4字节 图像的宽度
+- 偏移22 4字节 图像的高度
+
+解析文件头的14字节，格式化字符就是:`<2sI4xI`，2字节字符串和4字节跳过和4字节无符号整数
+
+解析信息头的12字节，`<Iii`，4字节无符号，4字节有符号，4字节有符号
+
+```python
+import struct
+import sys
+
+
+def parse_bmp(filename):
+    try:
+        with open(filename, "rb") as f:  # 'rb' -> 以二进制模式读取
+            # --- 1. 解析文件头 (14字节) ---
+            # 比如：42 4D DA 55 00 00 00 00 00 00 36 00 00 00
+            file_header_format = "<2sI4xI"
+            file_header_size = struct.calcsize(file_header_format) # calcsize() 函数返回格式的字节数
+            file_header_data = f.read(file_header_size) # 读取指定数量的字节
+
+            # 解包！
+            file_header = struct.unpack(file_header_format, file_header_data) # 解包，参数1为格式字符串，参数2为数据
+
+            signature = file_header[0] # 文件签名，42 4D = BM
+            file_size = file_header[1] # 文件大小，55 DA = 21978
+            pixel_data_offset = file_header[2] # 像素数据偏移 36=54
+
+            # 验证文件签名
+            if signature != b"BM":
+                print("错误: 这不是一个有效的BMP文件。")
+                return
+
+            print("\n[+] 文件头 (BITMAPFILEHEADER):")
+            print(f"  签名: {signature}")
+            print(f"  文件大小: {file_size} 字节")
+            print(f"  像素数据偏移: {pixel_data_offset}")
+
+
+            # --- 2. 解析信息头 (DIB Header) 的关键部分 ---
+            # 文件指针现在位于第14字节处
+            # 后面12字节：28 00 00 00 54 00 00 00 57 00 00 00
+            dib_header_format = "<Iii"  # 我们只关心前12字节：大小、宽度、高度
+            dib_header_size = struct.calcsize(dib_header_format) # calcsize() 函数返回格式的字节数
+            dib_header_data = f.read(dib_header_size) # 读取指定数量字节
+
+            dib_header = struct.unpack(dib_header_format, dib_header_data)
+
+            header_size = dib_header[0] # 28 = 40
+            width = dib_header[1] # 54 = 84
+            height = dib_header[2] # 57 = 87
+
+            print("\n[+] 信息头 (BITMAPINFOHEADER):")
+            print(f"  头部大小: {header_size}")
+            print(f"  图像宽度: {width} 像素")
+            print(f"  图像高度: {height} 像素")
+
+    except FileNotFoundError:
+        print(f"错误: 文件 '{filename}' 未找到。")
+    except struct.error:
+        print("错误: 文件太小或已损坏，无法解析。")
+
+
+# --- 主程序逻辑 ---
+if len(sys.argv) < 2:
+    print("用法: python bmp_parser.py <文件名.bmp>")
+else:
+    parse_bmp(sys.argv[1])
+```
+
