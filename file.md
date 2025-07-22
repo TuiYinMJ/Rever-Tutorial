@@ -978,3 +978,271 @@ else:
 ```
 
 ### 18、pillow
+pillow围绕一个Image的对象，用Pillow打开一个图片，得到的就是一个Image对象。
+常用的属性方法：
+- Image.open() 打开图片
+- .format() 获取图片格式
+- .size() 获取图片尺寸
+- .mode() 获取图片模式
+- .show() 显示图片
+- .resize() 重新设置图片尺寸
+- .convert() 转换图片模式
+- .save() 保存图片
+
+pillow也要安装 `pip install Pillow`
+
+```python
+from PIL import Image
+
+try:
+    img = Image.open("sample.jpg")
+
+    print("--- 原始图片信息 ---")
+    print(f"格式: {img.format}")
+    print(f"尺寸: {img.size}")
+    print(f"色彩模式: {img.mode}")
+
+    # 3. 快速预览一下图片
+    # img.show() # 在调试时可以取消这行注释来查看图片
+
+    # 4. 将图片转换为灰度图
+    print("\n正在生成灰度版本...")
+    grayscale_img = img.convert("L")
+    grayscale_img.save("sample_grayscale.png")  # 保存为png格式
+    print("灰度图片已保存为 sample_grayscale.png")
+
+    # 5. 生成一个128x128的缩略图
+    print("\n正在生成缩略图...")
+    #原地修改图片，并保持长宽比
+    img.thumbnail((128, 128))
+    img.save("sample_thumbnail.jpg")
+    print("缩略图已保存为 sample_thumbnail.jpg")
+
+except FileNotFoundError:
+    print("错误: sample.jpg 未找到！请确保图片和脚本在同一个文件夹下。")
+except Exception as e:
+    print(f"发生未知错误: {e}")
+```
+
+### 19、PyCryptodome
+一个三方库，加密解密用，也要安装：`pip install pycryptodome`
+加密、解密、密钥就不说了，很简单
+
+对称加密：加密和解密使用同一个密钥 AES
+非对称加密：加密和解密使用不同的密钥，公钥和私钥 
+
+```python
+from Crypto.Cipher import AES
+from Crypto.Random import get_random_bytes
+from Crypto.Util.Padding import pad, unpad
+
+# --- 1. 准备工作 ---
+# AES-128使用16字节(128位)的密钥
+key = get_random_bytes(16)
+data = b"This is the secret message for our RE course!"
+
+print(f"原始密钥 (hex): {key.hex()}")
+print(f"原始数据: {data}\n")
+
+# --- 2. 加密过程 ---
+# 创建AES加密器，使用CBC模式
+cipher = AES.new(key, AES.MODE_CBC)
+# CBC模式需要一个初始向量(IV)
+iv = cipher.iv
+# AES处理的数据必须是16字节的倍数
+padded_data = pad(data, AES.block_size)
+ciphertext = cipher.encrypt(padded_data)
+
+print("--- 加密完成 ---")
+print(f"初始向量 (IV) (hex): {iv.hex()}")
+print(f"加密后的密文 (hex): {ciphertext.hex()}\n")
+
+# --- 3. 解密过程 ---
+# 使用 key, iv, ciphertext 解密
+decipher = AES.new(key, AES.MODE_CBC, iv=iv) # 用相同的key和iv
+decrypted_padded_data = decipher.decrypt(ciphertext)
+# 解密后，去掉之前填充
+decrypted_data = unpad(decrypted_padded_data, AES.block_size)
+
+print("--- 解密完成 ---")
+print(f"解密后的数据: {decrypted_data}")
+
+# 4. 验证
+assert data == decrypted_data
+print("\n[+] 验证成功！原始数据与解密后的数据完全一致。")
+```
+
+### 20、分析测试
+将前面的内容汇总，书写一个简单的分析工具
+
+比如收到n个样本，先通过工具分析一下，初步了解再去深度逆向
+
+我需要实现：
+- 输入：脚本可以输入一个文件路径为命令行参数
+- 信息：显示基本的文件名、路径、大小
+- 指纹：计算显示md5 sha1 sha256哈希值
+- 提取：提取文件里的ASCII字符串
+- 匹配：提取出的字符串里，用正则表达式寻找信息，比如url、ip、dll名称等
+- 识别：检查文件头，判断文件类型
+- 输出：控制台打印清晰的分析报告
+
+```python
+import hashlib
+import os
+import re
+import sys
+
+
+def analyzer_basic_info(filepath):
+    """分析文件的基本信息。"""
+    pass
+
+def calc_hash(filepath):
+    """计算文件的哈希值。"""
+    pass
+
+def extract_strings(filepath):
+    """提取文件中的字符串。"""
+    pass
+
+def main():
+    print("="*10 + "分析报告" + "="*10)
+
+    if len(sys.argv) < 2:
+        print("请提供要分析的文件路径,python analyzer.py <filepath>")
+        sys.exit(1)
+    
+    target_file = sys.argv[1]
+
+    if not os.path.exists(target_file):
+        print(f"文件 '{target_file}' 不存在")
+        sys.exit(1)
+    
+    analyzer_basic_info(target_file)
+    calc_hash(target_file)
+    extract_strings(target_file)
+
+    print("=" * 10 + "分析结束" + "=" * 10)
+
+if __name__ == "__main__":
+    main()
+```
+首先构建基本框架
+
+```python
+locale.setlocale(locale.LC_TIME, "zh_CN.UTF-8")
+def analyzer_basic_info(filepath):
+    print("-"*10 + "基本信息" + "-"*10)
+    try:
+        file_size = os.path.getsize(filepath)
+        abs_path = os.path.abspath(filepath)
+        getmtime = time.strftime('%Y年%m月%d日 %A %H:%M:%S', time.localtime(os.path.getmtime(filepath)))
+        print(f"文件路径: {abs_path}")
+        print(f"文件大小: {file_size} 字节 - {file_size / 1024} KB - {file_size / 1024 / 1024} MB")
+        print(f"修改时间：{getmtime}")
+    except Exception as e:
+        print(f"错误: {e}")
+        return
+```
+实现基础信息的获取
+
+hash提取
+```python
+def calc_hash(filepath):
+    print("-" * 10 + "哈希信息" + "-" * 10)
+    try:
+        with open(filepath, "rb") as f:
+            file_bytes = f.read() # 一次性读取
+
+            md5 = hashlib.md5(file_bytes).hexdigest()
+            sha1 = hashlib.sha1(file_bytes).hexdigest()
+            sha256 = hashlib.sha256(file_bytes).hexdigest()
+
+            print(f"MD5: {md5}")
+            print(f"SHA1: {sha1}")
+            print(f"SHA256: {sha256}")
+    except Exception as e:
+        print(f"错误: {e}")
+        return
+```
+
+字符串提取
+```python
+def extract_strings(filepath):
+    print("-" * 10 + "可打印字符串" + "-" * 10)
+    try:
+        with open(filepath, "rb") as f:
+            result = ""
+            file_bytes = f.read()
+
+        for char_code in file_bytes:
+            char = chr(char_code)
+            # 判断字符是否可打印
+            if char in string.printable:
+                result += char
+            else:
+                if len(result) > 4:
+                    yield result
+                result = ""
+        if len(result) >= 4:
+            yield result
+    except Exception as e:
+        print(f"错误: {e}")
+        return
+
+def main():
+    print("="*10 + "分析报告" + "="*10)
+
+    if len(sys.argv) < 2:
+        print("请提供要分析的文件路径,python analyzer.py <filepath>")
+        sys.exit(1)
+    
+    target_file = sys.argv[1]
+
+    if not os.path.exists(target_file):
+        print(f"文件 '{target_file}' 不存在")
+        sys.exit(1)
+    
+    analyzer_basic_info(target_file)
+    calc_hash(target_file)
+
+    all_strings = list(extract_strings(target_file))
+
+    if all_strings:
+        print(f"  共提取到 {len(all_strings)} 个字符串。")
+
+        ip_pattern = rb"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
+        url_pattern = rb"https?://[^\s/$.?#].[^\s]*"
+        suspicious_apis = [b"CreateRemoteThread", b"WriteProcessMemory", b"HttpSendRequest"]
+
+        found_ips = set()
+        found_urls = set()
+        found_apis = set()
+
+        all_strings_bytes = "\n".join(all_strings).encode(errors="ignore")
+
+        for ip in re.findall(ip_pattern, all_strings_bytes):
+            found_ips.add(ip.decode(errors='ignore'))
+
+        for url in re.findall(url_pattern, all_strings_bytes):
+            found_urls.add(url.decode(errors='ignore'))
+
+        for s in all_strings:
+            for api in suspicious_apis:
+                if api in s.encode():
+                    found_apis.add(api.decode())
+
+        if found_ips or found_urls or found_apis:
+            print("\n--- [可疑情报分析] ---")
+            if found_ips:
+                print(f"  [!] 发现疑似IP地址: {list(found_ips)}")
+            if found_urls:
+                print(f"  [!] 发现疑似URL: {list(found_urls)}")
+            if found_apis:
+                print(f"  [!] 发现可疑API调用: {list(found_apis)}")
+
+    print("=" * 10 + "分析结束" + "=" * 10)
+
+if __name__ == "__main__":
+    main()
+```
