@@ -5,7 +5,7 @@
 安装Python什么的和Visual Studio的方法百度太多了，不说了
 和C语言的区别就是代码量少，C语言是编译型的，先把代码全部完整翻译成机器语言，才能运行，Python是解释型的，写一行就翻译一句执行一句这吊样
 
-### 变量
+### 1、变量
 变量：贴标签的盒子，比如我把打火机放到一个盒子里，贴标放松用品，这个贴了标签的盒子就是变量，盒子里的是值，标签是变量名，=是赋值，my_ddlong = 20
 
 Python是一个动态类型的，无需告诉str、int等，会自动识别
@@ -24,7 +24,7 @@ print(great_str[1]) # 切片
 print(f'{great_str} {g2str}') # 格式化
 ```
 
-### 容器
+### 2、容器
 如果存储一组数据，就要用容器，列表、元组、字典、集合
 
 列表List 随时可以修改，有序、可存放任何类型、可变，[]表示，逗号分隔元素
@@ -72,7 +72,7 @@ print(file_extensions)
 ```
 用来去重、in成员检测等
 
-### 流程控制
+### 3、流程控制
 - if 如果，最基本的
 ```python
 if file_size > 1000:
@@ -105,7 +105,7 @@ print("发射！")
 ```
 
 
-### 函数
+### 4、函数
 为了完成某个工作，防止每次都重复性操作，专门复用的
 def 定义函数
 ```python
@@ -148,7 +148,7 @@ print("--- 扫描结束 ---")
 
 
 
-### 导入
+### 5、导入
 现在我们已经可以把逻辑都封斋干到一个函数里了，但是若我们有成千上万的函数，一个用于检查，一个用于分析，一个用于解析，都在一个py里，变得难以维护
 我们就可以把这个做成一个工具，用到拿过来直接用，就是模块
 
@@ -168,7 +168,7 @@ Python自带的标准库也足以我们使用
 - socket，网络编程
 random等等
 
-### 文件I/O
+### 6、文件I/O
 文件交互和我们正常编辑一样。需要打开-读写-关闭
 为了防止忘记关闭，可以使用with语法
 ```python
@@ -235,7 +235,7 @@ except FileNotFoundError:
     print(f"错误: 文件 {filename} 未找到！")
 ```
 
-### 异常
+### 7、异常
 程序永远无法成为完美的理想状态，终究可能因为某些事情产生崩溃
 
 异常：程序在执行的时候，发生了意外
@@ -259,7 +259,7 @@ except Exception as e:
 还有else和finally，else是可选的，里面的代码会在try没有发生任何异常的情况下执行
 finally无论如何都会执行，可以自己动手加上这两个试一试
 
-### 列表推导式和生成器
+### 8、列表推导式和生成器
 比如，我有一个列表\[1,2,3,4,5,6\]，我想要得到一个新的列表，其内容是前面这个列表每个元素的平方，我们在之前可能这样写
 ```python
 numbers = [1, 2, 3, 4, 5]
@@ -316,7 +316,7 @@ print(f"只有文件名: {filenames_only}")
 
 还是多动手
 
-### lambda和高阶函数
+### 9、lambda和高阶函数
 def定义的函数，都有函数名，让我们反复使用
 
 但是有时候，我们需要一个功能特简单，且只用一次的临时的，可以用lambda，创建匿名临时的函数
@@ -378,7 +378,7 @@ print(sorted_files)
 print("-" * 25 + "\n")
 ```
 
-### 面向对象
+### 10、面向对象
 目前来说，所有学习的一切都零零散散，数据一个，输出一个，当程序变大，数据和操作分离的方法很难操控
 
 很经典的比喻就是类 Class 就是一个饼干模具，对象 Obj 就是真正的饼干
@@ -526,7 +526,7 @@ for pwd_str in test_passwords:
     print("-" * 35)
 ```
 
-### os/sys
+### 11、os/sys
 - os.getcwd()，获取当前工作目录
 - os.listdir(path)，列出指定目录下的所有文件和目录
 - os.mkdir(path)，创建目录
@@ -581,7 +581,7 @@ list_directory_tree(root_path)
 ```
 
 
-### re
+### 12、re
 正则表达式，就是一个超级的查找工具，比如：找出所有a开头的，所有符合电话规则的，所有符合邮箱规则的
 
 核心的字符：
@@ -626,7 +626,7 @@ found_err_lines = re.findall(err_line, log_data, re.MULTILINE)
 print(found_err_lines)
 ```
 
-### socket
+### 13、socket
 前面说过ip和port，相当于地址和房间号，socket就是为了能通话，安装的那个电话插口
 
 一个程序想要网络通讯，必须先创建一个socket，socket绑定了本地的一个端口，并可以链接到远程服务器的ip和端口
@@ -692,7 +692,7 @@ except socket.error as e:
 
 ```
 
-### struct
+### 14、struct
 网络传输，不止是文本，还有结构化的二进制数据，前面我们发送的就是一个简单的字符串
 想一想，在一个网络游戏里，一个角色的数据包，是什么样子？
 和我们一样，名字、id、坐标、血量等一次次的发？
@@ -773,8 +773,10 @@ recv_health = unpacked_data_tuple[3]
 
 print(f"成功恢复数据: ID={recv_id}, X={recv_x}, Y={recv_y}, Health={recv_health}")
 ```
+上面的4x表示跳过4字节，不做任何解析
 
-### 综合利用
+
+### 15、综合利用
 解析简单的bmp文件
 bmp的文件头结构基本如下：
 - 偏移0 2字节 文件前面，必须是BM
@@ -854,3 +856,125 @@ else:
     parse_bmp(sys.argv[1])
 ```
 
+### 16、hashlib
+哈希：哈希就像唯一的指针，有三个特性：
+- 确定性：同样的数据输入，会产生完全相同的输出
+- 单向性：从原始数据到指纹可以，但是反推原始数据不行
+- 雪崩效应：只要原始数据发生一个很微小的变化，指纹也会不同
+
+常见的：
+- md5
+- sha1
+- sha256
+
+```python
+import hashlib
+
+text1 = "hello world"
+text2 = "hello worlD"
+
+sha256_hasher = hashlib.sha256()
+
+# 哈希函数只接受字节(bytes)作为输入
+sha256_hasher.update(text1.encode("utf-8"))
+
+hash1 = sha256_hasher.hexdigest()
+
+print(f"'{text1}' 的SHA256哈希值是: {hash1}")
+
+# 验证雪崩效应
+sha256_hasher_2 = hashlib.sha256()
+sha256_hasher_2.update(text2.encode("utf-8"))
+hash2 = sha256_hasher_2.hexdigest()
+
+print(f"'{text2}' 的SHA256哈希值是: {hash2}")
+```
+如上，只有一个字母不同，产生的hash完全不同
+
+```python
+import hashlib
+
+
+def calculate_file_hash(filename, algorithm="sha256"):
+    """计算文件的哈希值"""
+    hasher = hashlib.new(algorithm)
+
+    try:
+        with open(filename, "rb") as f:
+            while chunk := f.read(4096): # 每次读取4KB数据
+                hasher.update(chunk) # 更新哈希值
+        return hasher.hexdigest() # 返回哈希值
+    except FileNotFoundError:
+        return f"错误: 文件 '{filename}' 未找到。"
+
+
+bmp_file = "21.bmp"
+bmp_hash = calculate_file_hash(bmp_file)
+print(f"\n文件 '{bmp_file}' 的SHA256哈希值是: {bmp_hash}")
+```
+读取文件生成hash，尝试把路径改为calc.exe，然后改为md5，生成后拿着去virustotal搜索一下，这就是指纹
+
+### 17、requests
+处理http请求，`pip install requests`，先安装
+
+- requests.get(url)
+- requests.get(url, params)
+- requests.post(url, data)
+
+发送请求得到响应对象
+- .status_code 状态码
+- .text 响应内容
+- .json() 响应内容，json格式
+- .cookies 响应的cookie
+- .headers 响应头
+- .content 响应内容，字节流
+
+```python
+import sys
+
+import requests
+
+
+def get_github_user_info(username):
+    """查询指定GitHub用户的信息。"""
+    # 1. 构造API的URL
+    url = f"https://api.github.com/users/{username}"
+    print(f"正在查询: {url}")
+
+    try:
+        # 2. 发送GET请求
+        response = requests.get(url)
+
+        # 3. 检查响应状态码
+        if response.status_code == 200:
+            # 4. 如果成功，解析JSON数据
+            data = response.json()
+
+            # 5. 打印我们关心的情报
+            print("\n--- GitHub User Info ---")
+            print(f"  Name: {data['name']}")
+            print(f"  Company: {data['company']}")
+            print(f"  Location: {data['location']}")
+            print(f"  Public Repos: {data['public_repos']}")
+            print(f"  Followers: {data['followers']}")
+            print("------------------------")
+
+        elif response.status_code == 404:
+            print("错误: 找不到该用户。")
+        else:
+            print(f"发生错误: {response.status_code}")
+
+    except requests.exceptions.RequestException as e:
+        print(f"网络请求错误: {e}")
+
+
+# --- 主程序逻辑 ---
+if len(sys.argv) > 1:
+    target_user = sys.argv[1]
+    get_github_user_info(target_user)
+else:
+    print("未提供用户名，查询默认用户 'gvanrossum'...")
+    get_github_user_info("gvanrossum")
+```
+
+### 18、pillow
