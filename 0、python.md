@@ -333,11 +333,26 @@ print("--- 扫描结束 ---")
 
 模块就是一个py文件，文件里可以写任何函数、类、变量
 
+比如导入一个官方的模块
+```python
+import math
+math.pi # 必须通过模块名称.访问内部的函数和变量
+
+# 还有另一种
+from math import pi,sqrt # 只导入pi和sqrt，这个不用.了
+
+import pandas as pd # 简写别名，防止冲突和方便使用
+
+from math import pi as pai # 也可以
+```
+
 包，则是装着多个模块的文件夹，要让Python识别包，需要__init__.py文件
+init告诉Python这个文件夹是一个可以被导入的包
 
-import就是从模块里拿出函数，比如import module，导入整个模块
-
-from module import func，从模块里拿出某个函数
+```python
+from my_pack import calc # my_pack包下的calc模块
+from my_pack.strings import my_str # my_pack包下的strings模块里的my_str
+```
 
 Python自带的标准库也足以我们使用
 - os，和系统交互
@@ -349,7 +364,7 @@ random等等
 
 ### 6、文件I/O
 文件交互和我们正常编辑一样。需要打开-读写-关闭
-为了防止忘记关闭，可以使用with语法
+为了防止忘记关闭或者意外情况，可以使用with语法
 ```python
 with open("file_name",'mode') as f:
     f.write("text")
@@ -358,7 +373,7 @@ with open("file_name",'mode') as f:
 ```
 做个演示
 - r 只读
-- w 写入
+- w 写入，且清空原内容
 - a 追加
 - b 二进制模式
 - rb 二进制读取
@@ -388,6 +403,23 @@ except FileNotFoundError:
     print("错误：日志文件未找到！")
 ```
 读取示例
+
+稍微说下方法：
+- .read() 读取整个文件，若文件很大，非常耗内存
+- .readline()/.readlines()
+  - 读取一行 和 读取所有行返回一个字符串列表，每行是列表的一个元素，也有内存风险
+很大的文件就是按行迭代比较好
+```python
+lines_processed = 0
+with open('large_log.txt', 'r', encoding='utf-8') as f:
+    for line in f: # f 本身就是一个可迭代对象
+        print(line.strip()) # .strip() 用于去除行尾的换行符 \n
+        lines_processed += 1
+print(f"总共处理了 {lines_processed} 行。")
+```
+- .write()，写入，不会加换行
+- .writelines()，写入多行，需要自己加换行符
+
 以及模拟判断文件
 ```python
 # 已知PNG文件头
@@ -419,6 +451,13 @@ except FileNotFoundError:
 
 异常：程序在执行的时候，发生了意外
 
+常见的错误：
+- ZeroDivisionError, 除0错误
+- ValueError，无法把非数字字符串转整数
+- FileNotFoundError，尝试打开不存在的文件
+- KeyError，访问不存在的键
+
+
 在Python中，有可能崩溃的语句，都放入try中，except就是若try里的语句真的产生了错误，程序会执行except里的语句
 ```python
 filename = "non_existent_file.txt"
@@ -433,10 +472,39 @@ except PermissionError:
     print(f"错误：没有权限读取文件'{filename}'。")
 except Exception as e:
     print(f"发生了一个未知错误: {e}")
+else:
+    # try完全成功
+finally:
+    # 无论成功失败
 ```
 如上，比如觉得读取一个文件会出错，那么我给他try一下
 还有else和finally，else是可选的，里面的代码会在try没有发生任何异常的情况下执行
 finally无论如何都会执行，可以自己动手加上这两个试一试
+
+尽量捕获精确的异常类型，而不是宽泛的Exception，这样可以针对不同的做出不同处理
+
+还有主动跑出异常raise
+```python
+def set_age(age):
+    if age < 0:
+        # 如果年龄不符合业务规则，我们主动抛出一个 ValueError
+        raise ValueError("年龄不能为负数！")
+    print(f"年龄已设置为: {age}")
+
+try:
+    set_age(25)   # 正常
+    set_age(-5)   # 这会触发 raise
+except ValueError as e:
+    print(f"设置失败: {e}")
+```
+自定义异常
+```python
+# 自定义异常类，继承基类
+class MyCustomError(Exception):
+    pass
+```
+用的时候就用raise正常抛，捕获也正常用这个名字捕
+
 
 ### 8、列表推导式和生成器
 比如，我有一个列表\[1,2,3,4,5,6\]，我想要得到一个新的列表，其内容是前面这个列表每个元素的平方，我们在之前可能这样写
@@ -552,7 +620,12 @@ sorted_students = sorted(students, key=lambda student: student["score"], reverse
 ```
 lambda 追求简洁，不是强大，不要看那些故意绕弯子的
 
-高阶函数，可以接收其他的函数作为参数，或者把函数作为返回值
+高阶函数：
+- 接受一个或者多个函数作为参数
+- 把一个函数作为返回值
+二者满足其一，则是高阶函数.
+
+一些内置的高阶函数
 - map(函数,列表)，把一个函数，依次作用于列表的每一个元素，且返回新的结果
 ```python
 numbers = [1, 2, 3, 4]
@@ -603,23 +676,74 @@ print(sorted_files)
 print("-" * 25 + "\n")
 ```
 
+还有把函数作为返回值
+比如闭包：
+```python
+def make_addr(n):
+    # 执行进来，但是没有代码内容，n会用到，保留
+    def adder(x):
+        return x+n
+    # 返回函数地址
+    return adder
+
+add = make_addr(5) # 调用函数，传入参数5
+add_10 = make_addr(10)
+
+print(add(5)) # 拿到函数地址，传入x，x+n=5+5=10
+print(add_10(10))
+````
+
+还有装饰器，装饰器是最重要最广泛的应用，意思就是还是一个高阶函数，接受一个函数做参数，返回一个增强的函数
+```python
+import time
+
+
+def timer(func):
+    def wrapper(*args,**kwargs):
+        start_time = time.time()
+        result = func(*args,**kwargs) # 调用被装饰的函数
+        end_time = time.time()
+        print(f"运行耗费：{end_time - start_time}s")
+        return result
+    return wrapper
+
+@timer
+def heavy():
+    for i in range(1000):
+        pass
+
+heavy()
+
+# @timer语法糖等价于，heavy = timer(heavy)
+```
+
+
 ### 10、面向对象
 目前来说，所有学习的一切都零零散散，数据一个，输出一个，当程序变大，数据和操作分离的方法很难操控
+
+面向对象，OOP，把数据和方法捆绑在一起，形成一个对象，通过对象构建程序
 
 很经典的比喻就是类 Class 就是一个饼干模具，对象 Obj 就是真正的饼干
 ```python
 class File:
+    # 初始化用，新对象创建，自动调用
     def __init__(self,filename,filesize):
+        # 对象的属性
         self.name = filename
         self.size = filesize
         print(f"{self.name}创建了")
-    
+    # 自定义的方法
     def display_info(self):
         print(f"文件名称{self.name}")
         print(f"文件大小{self.size}")
 ```
 - \_\_init\_\_(self)，构造函数，初始化
 - self，代表对象本身，当display_info方法被调用，self 就指向那个调用它的具体的实例
+
+面向对象的三大支柱：
+- 封装，把属性和方法包装在一起，且对外隐藏实现细节，暴露有限的接口交互
+- 继承，继承 一个已经存在的类，比如前面的异常继承已经存在的基类
+- 多态，多种形态，不同对象，调用同一个方法，表现不同
 
 #### 继承、多态
 继承：就像遗传学，子类会继承父类的属性和方法，父类就是基类，子类就是派生类
@@ -681,7 +805,7 @@ for f in all_files:
 就像开车一样，汽车只给你留下了方向盘，油门刹车和挂档，这都是安全的接口，你不用也不应该去看内部如何实现的这个功能，因为可能会出问题
 
 Python 没有强制的 private 权限等，不严格，君子的约定
-- _下划线开头的，比如self._name，说明这是一个内部属性，不要外部调用
+- _下划线开头的，比如self._name，说明这是一个受保护的，不要外部调用
 - 两个下划线的 ，会触发名字改编，在外部无法访问，是个伪私有，通过其他手段还是可以访问
 
 特殊方法：
@@ -759,10 +883,20 @@ for pwd_str in test_passwords:
 - os.path.join(path1, path2)，拼接路径
 - os.path.exists(path)，判断路径是否存在
 - os.path.isfile(path)，判断路径是否为文件
+- os.path.isdir()，是否目录
 - os.system(command)，执行命令
+- os.makedirs('dir1/dir2')，递归创建多级目录
+- os.rmdir()，删除空目录
+- os.rename()，重命名文件或者目录
+- os.getenv('VAR_NAME')，获取一个环境变量的值
+- os.environ，获取所有环境变量，返回一个字典
+
 
 os和系统交互,sys和python交互
 - sys.argv，命令行参数列表
+- sys.exit() 退出
+- sys.version，解释器版本
+- sys.platform，系统标识
 
 一个遍历
 ```python
@@ -805,6 +939,19 @@ print(root_path)
 list_directory_tree(root_path)
 ```
 
+3.4后，有一个pathlib
+```python
+from pathlib import Path
+
+p = Path('path')
+```
+- .parent，获取父目录
+- .name，获取文件名
+- .suffix，获取文件后缀
+- .mkdir，创建目录
+- .exists，是否存在
+- .write_text 和 .read_text写入和读取文本
+
 
 ### 12、re
 正则表达式，就是一个超级的查找工具，比如：找出所有a开头的，所有符合电话规则的，所有符合邮箱规则的
@@ -815,9 +962,14 @@ list_directory_tree(root_path)
 - + 匹配1个或多个，ab+c，能匹配abc，abbbc，但不能ac
 - ? 匹配0个或1个，ab?c，能匹配ac，abc，但不能abbc
 - \d 匹配数字，任意一个
+- \D 任意非数字
 - \w 匹配字母、数字、下划线
+- \W 非单词字母
 - \s 匹配空白字符，空格、tab、换行
+- \S 非空白字符
 - \[...\] 匹配任意一个括号内的
+- \[^\] 不在括号内的
+- () 分组捕获，比如：(\d{4})-(\d{2})，使用group查看对应组
 - ^ 匹配开头 ，比如^Error，匹配Error开头的
 - $ 匹配结尾 ，比如Error$,匹配Error结尾的
 - {n,m} ， 匹配前一个字符n到m个，比如\d{1,3} 匹配1到3个数字
@@ -825,6 +977,21 @@ list_directory_tree(root_path)
 模块常用的：
 - re.search(pattern, string)，匹配字符串，返回第一个匹配项，无匹配则返回None
 - re.findall(pattern, string)，返回所有匹配项，无匹配则返回[]
+- re.sub(pattern,replace,string)，查找且替换
+- re.match(pattern,string)，从字符串开头匹配，若开头不匹配，直接返回None
+- pattern = re.compile(pattern)，如果多次用到这个表达式，可以先编译成对象，提高效率
+```python
+import re
+
+text = "Hello World"
+match1 = re.match(r'Hello', text) # 成功
+match2 = re.match(r'World', text) # 失败，因为'World'不在开头
+
+print(match1) # -> <re.Match object; span=(0, 5), match='Hello'>
+print(match2) # -> None
+```
+带个例子，不然不明显
+
 
 比如做一个敏感日志提取
 ```python
@@ -852,7 +1019,13 @@ print(found_err_lines)
 ```
 
 ### 13、socket
-前面说过ip和port，相当于地址和房间号，socket就是为了能通话，安装的那个电话插口
+理解socket可以明白网络数据传输的本质
+
+socket套接字，网络中进行数据通信的端点，就像一手机，两电脑想通信，就给各自需要一个socket
+
+为了让通话成功，你得有ip，就像住酒店，你知道了对方的地址，还有知道port，端口分机号，比如找到酒店，给前台说转888号
+
+socket有TCP和UDP两种
 
 一个程序想要网络通讯，必须先创建一个socket，socket绑定了本地的一个端口，并可以链接到远程服务器的ip和端口
 
@@ -879,46 +1052,83 @@ Data：
 ```python
 import socket
 
+# 1. 创建 socket 对象
+# AF_INET 表示使用 IPv4 协议
+# SOCK_STREAM 表示使用 TCP 协议
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-# AF_INET: IPv4
-# SOCK_STREAM: TCP
 
-host = socket.gethostname()
-port = 12345
+# 2. 绑定地址和端口
+host = "127.0.0.1"  # 监听本机
+port = 9999
 server_socket.bind((host, port))
 
-server_socket.listen(5) # 监听5个连接
-print(f"Server listening on {host}:{port}")
+# 3. 开始监听，5 表示最多允许5个客户端排队等待连接
+server_socket.listen(5)
+print(f"服务器正在 {host}:{port} 上监听...")
 
-while True:
-    client_socket,addr = server_socket.accept() # 接受客户端连接
-    print(f"Connected to {addr}")
+# 4. 接受客户端连接
+# accept() 会阻塞程序，直到有客户端连接
+# 它返回一个新的 socket 对象 (conn) 和客户端的地址 (addr)
+conn, addr = server_socket.accept()
+print(f"接受到来自 {addr} 的连接")
 
-    mess = "Hello, World!"
-    client_socket.send(mess.encode('utf-8')) # 发送消息给客户端
+try:
+    while True:
+        # 5. 接收数据
+        # 1024 是缓冲区大小，表示一次最多接收 1024 字节
+        data = conn.recv(1024)
+        if not data:
+            # 如果接收到空数据，表示客户端已关闭连接
+            print("客户端已断开连接。")
+            break
 
-    client_socket.close()
+        message = data.decode("utf-8")
+        print(f"收到消息: {message}")
+
+        # 6. 发送回执消息
+        response = f"已收到你的消息: '{message}'"
+        conn.sendall(response.encode("utf-8"))
+
+finally:
+    # 7. 关闭连接
+    conn.close()
+    server_socket.close()
+    print("服务器已关闭。")
+
 ```
 客户端写法
 ```python
 import socket
 
-client_socket =  socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+# 1. 创建 socket 对象
+client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-host = socket.gethostname()
-port = 12345
+# 服务器地址和端口
+host = "127.0.0.1"
+port = 9999
 
 try:
+    # 2. 连接服务器
     client_socket.connect((host, port))
-    resp = client_socket.recv(1024) # 接收服务器发送的消息,1024是缓冲区大小
-    print(f"Received: {resp.decode('utf-8')}")
-except socket.error as e:
-    print(str(e))
+    print(f"已成功连接到服务器 {host}:{port}")
 
+    # 3. 发送数据
+    message_to_send = "你好，服务器！"
+    client_socket.sendall(message_to_send.encode("utf-8"))
+    print(f"已发送消息: {message_to_send}")
+
+    # 4. 接收服务器的回应
+    data = client_socket.recv(1024)
+    print(f"收到服务器回应: {data.decode('utf-8')}")
+
+finally:
+    # 5. 关闭连接
+    client_socket.close()
+    print("已与服务器断开连接。")
 ```
 
 ### 14、struct
-网络传输，不止是文本，还有结构化的二进制数据，前面我们发送的就是一个简单的字符串
+发送数据，或者把数据保存到一个二进制文件，都需要原始的字节，所以struct就是一个打包解包工具
 想一想，在一个网络游戏里，一个角色的数据包，是什么样子？
 和我们一样，名字、id、坐标、血量等一次次的发？
 绝对不是的，他们发送是有结构的，就想：
@@ -933,25 +1143,35 @@ except socket.error as e:
 struct了解下
 - pack，把数据打包成二进制数据
 - unpack，把二进制数据解包成数据
+- calcsize,计算大小
 
 字节序：
 - < - little endian，小端序，绝大数win和intel/amd处理器都是小端序，低位存低位地址，高位存高位
 - \> or ! - big endian，大端序，arm处理器都是大端序，高位存低位，低位存高位
+- @ - 本地字节序，默认的
+- ! - 网络字节序，等同大端序
 
 别迷糊，比如0x12345678，这个数在计算机中存储时，会变成0x78 0x56 0x34 0x12，大端就是正常的 0x12 0x34 0x56 0x78
 
 常用的格式字符：
+- c - char - bytes - 1字节
+- b - signed char - 1字节
 - B - unsigned char - 1字节
+- ? - Bool - 1字节
 - h - short - 2字节
 - H - unsigned short - 2字节
 - i - int - 4字节
 - I - unsigned int - 4字节
+- l - long - 4字节
+- L - unsigned long - 4字节
 - q - long long - 8字节
 - Q - unsigned long long - 8字节
 上面这些在Python中不是integer，上面写的c语言的数据类型
 - f - float - 4字节
 - d - double - 8字节
 - s - char[] - 字符串，字符串长度由后面的数字决定
+- p - char[]
+- x - 填充的
 Python的f和d都是float s为bytes
 
 代码如下：
@@ -1082,15 +1302,22 @@ else:
 ```
 
 ### 16、hashlib
-哈希：哈希就像唯一的指针，有三个特性：
+哈希：单向的数学运算，可以把任意长度的数据转化为一个固定长度的字符串，这个输出就是哈希值/摘要，有三个特性：
 - 确定性：同样的数据输入，会产生完全相同的输出
 - 单向性：从原始数据到指纹可以，但是反推原始数据不行
 - 雪崩效应：只要原始数据发生一个很微小的变化，指纹也会不同
+
+常常用来保存密码防止明文泄露，文件传输的教研，防止下载过程损坏或者被植入恶意木马，在存储和数据系统进行去重，因为一样的话haash肯定是相同的
 
 常见的：
 - md5
 - sha1
 - sha256
+
+基本就是导入hashlib开始耍
+- .update()，提供要计算的数据
+- .hexdigest()，获取哈希值
+sha256、sha512、sha3_256等是安全的，md5和sha1已经不推荐使用了
 
 ```python
 import hashlib
@@ -1137,7 +1364,9 @@ bmp_file = "21.bmp"
 bmp_hash = calculate_file_hash(bmp_file)
 print(f"\n文件 '{bmp_file}' 的SHA256哈希值是: {bmp_hash}")
 ```
-读取文件生成hash，尝试把路径改为calc.exe，然后改为md5，生成后拿着去virustotal搜索一下，这就是指纹
+读取文件生成hash，尝试把路径改为calc.exe，然后改为md5，生成后拿着去virustotal搜索一下，这就是指纹，这就是大文件的获取方式
+
+往往一次hash不安全，可以使用彩虹表进行查询，也可以加盐提高安全性
 
 ### 17、requests
 处理http请求，`pip install requests`，先安装
@@ -1202,6 +1431,11 @@ else:
     get_github_user_info("gvanrossum")
 ```
 
+还可以设置请求投，通过字典设置，然后headers参数带入
+timeout的超时设置
+
+包括对同一个网站多次通讯，先登录才看其他页面，使用requests.Session对象来访问，自动保持
+
 ### 18、pillow
 pillow围绕一个Image的对象，用Pillow打开一个图片，得到的就是一个Image对象。
 常用的属性方法：
@@ -1213,6 +1447,8 @@ pillow围绕一个Image的对象，用Pillow打开一个图片，得到的就是
 - .resize() 重新设置图片尺寸
 - .convert() 转换图片模式
 - .save() 保存图片
+- .crop()，裁剪
+- .thumbnail()，生成缩略图，并且保持长宽比，直接原地修改
 
 pillow也要安装 `pip install Pillow`
 
@@ -1250,50 +1486,47 @@ except Exception as e:
 ```
 
 ### 19、PyCryptodome
-一个三方库，加密解密用，也要安装：`pip install pycryptodome`
-加密、解密、密钥就不说了，很简单
+一个三方库，加密解密用
+也要安装:`pip install pycryptodome`
 
-对称加密：加密和解密使用同一个密钥 AES
-非对称加密：加密和解密使用不同的密钥，公钥和私钥 
+加密、解密、密钥就不说了，很简单
+- 对称加密:加密和解密使用同一个密钥 AES
+- 非对称加密:加密和解密使用不同的密钥，公钥和私钥
+还有其他的库可以操作，可以自己摸索
 
 ```python
 from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
-from Crypto.Util.Padding import pad, unpad
 
 # --- 1. 准备工作 ---
 # AES-128使用16字节(128位)的密钥
 key = get_random_bytes(16)
 data = b"This is the secret message for our RE course!"
 
-print(f"原始密钥 (hex): {key.hex()}")
-print(f"原始数据: {data}\n")
-
 # --- 2. 加密过程 ---
-# 创建AES加密器，使用CBC模式
-cipher = AES.new(key, AES.MODE_CBC)
-# CBC模式需要一个初始向量(IV)
-iv = cipher.iv
-# AES处理的数据必须是16字节的倍数
-padded_data = pad(data, AES.block_size)
-ciphertext = cipher.encrypt(padded_data)
+# 创建AES加密器，使用EAX模式
+cipher = AES.new(key, AES.MODE_EAX)
+nonce = cipher.nonce  # 随机数，每次加密都不同
+ciphertext, tag = cipher.encrypt_and_digest(data)
 
 print("--- 加密完成 ---")
-print(f"初始向量 (IV) (hex): {iv.hex()}")
+print(f"密钥 (key): {key.hex()}")
+print(f"nonce: {nonce.hex()}")
+print(f"tag认证标签: {tag.hex()}")
 print(f"加密后的密文 (hex): {ciphertext.hex()}\n")
 
 # --- 3. 解密过程 ---
-# 使用 key, iv, ciphertext 解密
-decipher = AES.new(key, AES.MODE_CBC, iv=iv) # 用相同的key和iv
-decrypted_padded_data = decipher.decrypt(ciphertext)
-# 解密后，去掉之前填充
-decrypted_data = unpad(decrypted_padded_data, AES.block_size)
-
-print("--- 解密完成 ---")
-print(f"解密后的数据: {decrypted_data}")
+decipher = AES.new(key, AES.MODE_EAX, nonce=nonce)
+try:
+    decrypted = decipher.decrypt_and_verify(ciphertext, tag)
+    # .decrypt_and_verify 会检查认证标签，若数据或者标签被篡改，会异常
+    print("--- 解密完成 ---")
+    print(f"解密后的数据: {decrypted.decode('utf-8')}")
+except ValueError:
+    print("解密失败")
 
 # 4. 验证
-assert data == decrypted_data
+assert data == decrypted
 print("\n[+] 验证成功！原始数据与解密后的数据完全一致。")
 ```
 
@@ -1352,7 +1585,7 @@ def main():
 if __name__ == "__main__":
     main()
 ```
-首先构建基本框架
+首先构建基本框架，这里有个name==main，意思是当脚本直接运行的时候，name=main，如果被当作模块的时候，name=文件名
 
 ```python
 locale.setlocale(locale.LC_TIME, "zh_CN.UTF-8")
@@ -1401,14 +1634,14 @@ def extract_strings(filepath):
             file_bytes = f.read()
 
         for char_code in file_bytes:
-            char = chr(char_code)
+            char = chr(char_code) # chr把数字转为字符
             # 判断字符是否可打印
-            if char in string.printable:
-                result += char
+            if char in string.printable: # 如果是可显示字符
+                result += char # 加到result里
             else:
-                if len(result) > 4:
-                    yield result
-                result = ""
+                if len(result) > 4: # 否则就判断当前result长度是否大于4
+                    yield result # 如果当前长度大于4，就yield返回内容
+                result = "" # 清空result
         if len(result) >= 4:
             yield result
     except Exception as e:
@@ -1431,7 +1664,7 @@ def main():
     analyzer_basic_info(target_file)
     calc_hash(target_file)
 
-    all_strings = list(extract_strings(target_file))
+    all_strings = list(extract_strings(target_file)) # 拿到字符列表
 
     if all_strings:
         print(f"  共提取到 {len(all_strings)} 个字符串。")
@@ -1440,24 +1673,24 @@ def main():
         url_pattern = rb"https?://[^\s/$.?#].[^\s]*"
         suspicious_apis = [b"CreateRemoteThread", b"WriteProcessMemory", b"HttpSendRequest"]
 
-        found_ips = set()
+        found_ips = set() # 去重
         found_urls = set()
         found_apis = set()
 
-        all_strings_bytes = "\n".join(all_strings).encode(errors="ignore")
+        all_strings_bytes = "\n".join(all_strings).encode(errors="ignore") # 用换行链接起来，且编码成字节，如果遇到无法编码的，比如emoji标签等，不要报错，继续往下执行
 
-        for ip in re.findall(ip_pattern, all_strings_bytes):
+        for ip in re.findall(ip_pattern, all_strings_bytes): # 开始匹配是否存在
             found_ips.add(ip.decode(errors='ignore'))
 
         for url in re.findall(url_pattern, all_strings_bytes):
             found_urls.add(url.decode(errors='ignore'))
 
-        for s in all_strings:
-            for api in suspicious_apis:
-                if api in s.encode():
-                    found_apis.add(api.decode())
+        for s in all_strings: # 这个先遍历字符内容
+            for api in suspicious_apis: # 遍历我们的名单列表
+                if api in s.encode(): # 如果名单列表存在于字符内容里
+                    found_apis.add(api.decode()) # 添加
 
-        if found_ips or found_urls or found_apis:
+        if found_ips or found_urls or found_apis: # 如果有数据
             print("\n--- [可疑情报分析] ---")
             if found_ips:
                 print(f"  [!] 发现疑似IP地址: {list(found_ips)}")
@@ -1471,3 +1704,122 @@ def main():
 if __name__ == "__main__":
     main()
 ```
+
+
+
+### 21、多线程 / 多进程 / 异步
+多线程，适合I/O密集任务，比如网络请求，文件读写，因为等待IO的时候，CPU空闲，这时候可以利用起来，提高效率
+多进程，适合CPU密集任务，比如数学计算，大规模数据处理，利用多核CPU让多个进程并行
+异步，处理超高并发IO的方案
+
+#### 多线程
+说白了，比如我做饭的时候，现在炖着牛肉，也就相当于现在已经在下载文件和文件读取了
+此时我是没事干的，我可以在这个过程里，去准备下一个菜的东西，或者去玩会电脑，等我忙的差不多了，这个牛肉炖好了
+
+但是因为Python的GIL，一个进程内的多个线程只有一个线程能真的执行Python的代码
+```python
+import threading
+import time
+
+
+def download(url):
+    print(f"开始下载: {url}")
+    time.sleep(2)  # 模拟下载耗时2秒
+    print(f"下载完成: {url}")
+
+
+urls = ["http://site1.com", "http://site2.com", "http://site3.com"]
+
+start_time = time.time()
+
+# --- 顺序执行 ---
+# for url in urls:
+#     download(url) # 总耗时约 6 秒
+
+# # --- 多线程执行 ---
+threads = []
+for url in urls:
+    thread = threading.Thread(target=download, args=(url,)) # 创建线程，执行download，参数url
+    threads.append(thread) # 添加到列表
+    thread.start()  # 启动线程，会启动三个
+
+for thread in threads: # 循环列表
+    thread.join()  # 等待所有线程执行完毕
+
+end_time = time.time()
+print(f"多线程总耗时: {end_time - start_time:.2f} 秒")  # 总耗时约 2 秒
+```
+
+
+线程是给进程干活的，还可以有多进程
+
+
+```python
+import multiprocessing
+import time
+
+
+def cpu_heavy_task(n):
+    print(f"开始计算: {n}")
+    count = 0
+    for i in range(10**7):  # 执行一个耗时的循环
+        count += i
+    print(f"计算完成: {n**7}")
+    return count
+
+
+if __name__ == "__main__":
+    start_time = time.time()
+
+    # 使用进程池，让CPU的多个核心一起工作
+    with multiprocessing.Pool(processes=3) as pool:
+        pool.map(cpu_heavy_task, [1, 2, 3])
+
+    end_time = time.time()
+    print(f"多进程总耗时: {end_time - start_time:.2f} 秒")
+```
+1的7次方=1,2的7次方=128,3的7次方=2187
+
+
+异步，不停的切换，比如我今天报单了，看一眼订单1，按下原料开关，去看订单2，按下机器开关，去看订单3，操作机器
+一会，订单1的完成信号出来了，我立刻回到订单1，进行下一步工作，也就是一直不停的在做可以立即完成的工作
+- asyncio 使用一个事件循环来调度一系列的协程
+  - async def，定义函数为协程
+  - await,当一个协程执行到await某个耗时操作，暂停自己，控制权给事件循环，事件循环去执行其他准备就绪的协程
+```python
+
+import asyncio
+import time
+
+
+async def download_async(url):
+    print(f"开始下载: {url}")
+    await asyncio.sleep(2)  # 模拟异步的网络I/O操作
+    print(f"下载完成: {url}")
+
+
+async def main():
+    start_time = time.time()
+
+    # 使用 asyncio.gather() 并发运行多个协程
+    await asyncio.gather(
+        download_async("http://site1.com"),
+        download_async("http://site2.com"),
+        download_async("http://site3.com"),
+    )
+
+    end_time = time.time()
+    print(f"异步I/O总耗时: {end_time - start_time:.2f} 秒")  # 总耗时约 2 秒
+
+
+# 运行 asyncio 程序
+asyncio.run(main())
+```
+
+
+### 22、后续
+至于其他的内容，比如：
+- 数据的持久化，csv、xml、数据库、表格等操作
+- PyQT界面等
+- ctypes和C交互
+- 其他没说到的内容，用到什么学什么，这里就带一个大概
