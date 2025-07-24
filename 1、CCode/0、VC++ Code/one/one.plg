@@ -6,29 +6,30 @@
 --------------------Configuration: one - Win32 Debug--------------------
 </h3>
 <h3>Command Lines</h3>
-Creating temporary file "C:\Users\Administrator\AppData\Local\Temp\RSP913D.tmp" with contents
+Creating temporary file "C:\Users\Administrator\AppData\Local\Temp\RSP2B52.tmp" with contents
 [
 /nologo /MLd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /Fp"Debug/one.pch" /YX /Fo"Debug/" /Fd"Debug/" /FD /GZ /c 
-"D:\re\Rever-Tutorial\1、CCode\0、VC++ Code\one\hello.c"
+"D:\re\Rever-Tutorial\1、CCode\0、VC++ Code\one\00006.c"
 ]
-Creating command line "cl.exe @C:\Users\Administrator\AppData\Local\Temp\RSP913D.tmp" 
-Creating temporary file "C:\Users\Administrator\AppData\Local\Temp\RSP913E.tmp" with contents
+Creating command line "cl.exe @C:\Users\Administrator\AppData\Local\Temp\RSP2B52.tmp" 
+Creating temporary file "C:\Users\Administrator\AppData\Local\Temp\RSP2B53.tmp" with contents
 [
 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /incremental:yes /pdb:"Debug/one.pdb" /debug /machine:I386 /out:"Debug/one.exe" /pdbtype:sept 
+".\Debug\00001.obj"
 ".\Debug\hello.obj"
-".\Debug\2.obj"
+".\Debug\00004.obj"
+".\Debug\00006.obj"
 ]
-Creating command line "link.exe @C:\Users\Administrator\AppData\Local\Temp\RSP913E.tmp"
+Creating command line "link.exe @C:\Users\Administrator\AppData\Local\Temp\RSP2B53.tmp"
 <h3>Output Window</h3>
 Compiling...
-hello.c
-D:\re\Rever-Tutorial\1、CCode\0、VC++ Code\one\hello.c(8) : warning C4098: 'main11' : 'void' function returning a value
+00006.c
 Linking...
 
 
 
 <h3>Results</h3>
-one.exe - 0 error(s), 1 warning(s)
+one.exe - 0 error(s), 0 warning(s)
 </pre>
 </body>
 </html>

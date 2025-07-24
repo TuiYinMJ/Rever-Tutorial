@@ -16,7 +16,7 @@ void process_data(char *user_input, int len) {
     }
 }
 
-int main() {
+int main00000() {
     char large_input[512] = {0}; 
     process_data(large_input, -1);
     return 0;

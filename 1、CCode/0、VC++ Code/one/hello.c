@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-void main11(){
+void main00002(){
     signed char c = -5; // 绝对值5的二进制0000 0101
     // 取反1111 1010
     // +1 = 1111 1011，验证一下
