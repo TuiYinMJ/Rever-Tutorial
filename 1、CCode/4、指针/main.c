@@ -1,16 +1,14 @@
 #include <stdio.h>
 
-int my_strlen(const char* s){
-    const char *start = s;
-    while(*s != '\0'){
-        s++; // 往前走一个字节
+void modify_array(int arr[], int size) {
+    for (int i = 0; i < size; i++) {
+        arr[i] = arr[i] * 10;
     }
-    return s - start; // 指针相减，得到的是字节数
 }
 
-int main(){
-    char bad_str[] = "Hello World"; 
-    int length = my_strlen(bad_str);
-    printf("string length: %d\n", length); 
+int main() {
+    int my_arr[3] = {1, 2, 3};
+    modify_array(my_arr, 3);
+    printf("调用后，数组内容为: %d, %d, %d\n", my_arr[0], my_arr[1], my_arr[2]);
     return 0;
 }
