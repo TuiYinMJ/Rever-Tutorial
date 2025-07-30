@@ -7,4 +7,5 @@ gcc -E ./main.c -o ./mypro.i
 gcc -S ./main.c -o ./mypro.s
 gcc -c ./main.c -o ./mypro.o
 gcc -g ./main.c -O0 -o ./mypro.exe
+gcc -g ./main.c -o ./mypro2.exe
 mypro.exe
