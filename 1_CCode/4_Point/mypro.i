@@ -1783,74 +1783,23 @@ void __attribute__((__cdecl__)) __mingw_str_free(void *ptr);
   }
 # 195 "D:/Program Files/mingw64/x86_64-w64-mingw32/include/string.h" 2 3
 # 3 "./main.c" 2
-# 1 "D:/Program Files/mingw64/lib/gcc/x86_64-w64-mingw32/15.1.0/include/stdbool.h" 1 3 4
-# 4 "./main.c" 2
 
 
-# 5 "./main.c"
-int main(int argc, char *argv[]) {
-    bool show_help = false;
-    char *output_file = 
-# 7 "./main.c" 3
-                       ((void *)0)
-# 7 "./main.c"
-                           ;
-    char *input_file = 
-# 8 "./main.c" 3
-                      ((void *)0)
-# 8 "./main.c"
-                          ;
+# 4 "./main.c"
+struct Player {
+    char name[32];
+    int level;
+    float hp;
+    bool is_online;
+};
 
-    for (int i = 1; i < argc; i++) {
-
-        if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
-            show_help = true;
-            break;
-        }
-
-        else if (strcmp(argv[i], "-o") == 0) {
-
-            if (i + 1 < argc) {
-                output_file = argv[i + 1];
-                i++;
-            } else {
-                fprintf(
-# 23 "./main.c" 3
-                       (__acrt_iob_func(2))
-# 23 "./main.c"
-                             , "错误：-o 需要传递文件名称，请-h查看帮助\n");
-                return 1;
-            }
-        }
-        else {
-            if (input_file == 
-# 28 "./main.c" 3
-                             ((void *)0)
-# 28 "./main.c"
-                                 ) {
-                input_file = argv[i];
-            } else {
-                fprintf(
-# 31 "./main.c" 3
-                       (__acrt_iob_func(2))
-# 31 "./main.c"
-                             , "错误：不支持多个输入文件\n");
-                return 1;
-            }
-        }
-    }
-
-    if (show_help) {
-        printf("用法: %s [options] <input-file>\n", argv[0]);
-        printf("选项:\n");
-        printf("  -h, --help    显示帮助信息.\n");
-        printf("  -o <file>     指定输出文件.\n");
-    } else {
-        printf("--- 程序配置 ---\n");
-        printf("输入文件:  %s\n", input_file ? input_file : "未指定");
-        printf("输出文件: %s\n", output_file ? output_file : "未指定");
-        printf("-----------------------------\n");
-    }
-
-    return 0;
+int main() {
+    struct Player p1;
+    struct Player* p = &p1;
+    strcpy(p->name, "Aragorn");
+    p->level = 99;
+    p->hp = 150.5f;
+    p->is_online = true;
+    printf("Player: %s, Level: %d\n", p->name, p->level);
+    printf("Size of struct Player is: %zu bytes\n", sizeof(struct Player));
 }
