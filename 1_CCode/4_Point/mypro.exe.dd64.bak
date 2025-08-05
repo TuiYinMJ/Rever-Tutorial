@@ -1,0 +1,23 @@
+{
+ "breakpoints": [
+  {
+   "address": "0x11BE",
+   "enabled": true,
+   "oldbytes": "0xD7FF",
+   "type": 0,
+   "titantype": "0x0",
+   "name": "",
+   "module": "mypro.exe",
+   "breakCondition": "",
+   "logText": "",
+   "logCondition": "",
+   "commandText": "",
+   "commandCondition": "",
+   "logFile": "",
+   "fastResume": false,
+   "silent": false
+  }
+ ],
+ "hashAlgorithm": "murmurhash",
+ "hash": "0xC349AE57D9C772DD"
+}
