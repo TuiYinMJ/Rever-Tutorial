@@ -1,5 +1,5 @@
-
 import { jsPDF } from 'jspdf';
+import 'jspdf-autotable';
 import { Table, TableBody, TableCell, TableHeader, TableRow, TableHead, TableRoot } from '@/components/ui/table';
 import { toast } from 'sonner';
 import { Textarea } from '@/components/ui/textarea';
@@ -10,8 +10,9 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { SelectItem, Select, SelectContent, SelectValue, SelectTrigger } from '@/components/ui/select';
 import { Languages, Edit, Download } from 'lucide-react';
-import html2canvas from 'html2canvas';
 import { Button } from '@/components/ui/button';
+import { addChineseFont } from '../font'; 
+
 const QuotationView = ({ 
   isOpen, 
   onClose, 
@@ -139,210 +140,84 @@ const QuotationView = ({
   };
 
   // 导出PDF
-  const handleExportPDF = async (quotation, isTranslated = false) => {
+  const handleExportPDF = async (quotation) => {
     try {
-      const dataToExport = isTranslated && translation.data ? translation.data : editableData;
+      const isChinese = translation.language === 'zh';
+      const dataToExport = translation.data || editableData;
       
-      // 获取报价单项目
-      let items = quotation.items;
-      if (!items) {
-        toast.error('报价单项目数据缺失');
+      if (!quotation.items || quotation.items.length === 0) {
+        toast.error('报价单项目数据缺失，无法导出。');
         return;
       }
 
-      // 创建PDF
       const doc = new jsPDF();
-      
-      // 添加思源黑体字体支持
-      // 使用思源黑体的 Base64 编码（这里使用一个简化的示例，实际应用中应使用完整字体）
-      const fontBase64 = "AAEAAAAQAQAABAAARkZUTW6mHGAAAwAIAAAAIgAAAC5HREVGABQAAP/8hAAEAAAAAEhQT0MABQAA//wFAABHTFNZAA0AAAD8AAABQAAAAGoAAAAA";
-      doc.addFileToVFS("NotoSansSC-normal.ttf", fontBase64);
-      doc.addFont("NotoSansSC-normal.ttf", "NotoSansSC", "normal");
-      doc.setFont("NotoSansSC");
-      
+
+      // 字体加载与诊断
+      if (isChinese) {
+        console.log("检测到中文，正在尝试加载自定义字体...");
+        addChineseFont(doc);
+        doc.setFont("SourceHanSans");
+      } else {
+        // 对于非中文，明确设置使用 jsPDF 的内置字体
+        doc.setFont("helvetica");
+      }
+
+      // PDF 内容
       // 标题
       doc.setFontSize(20);
-      const title = translation.language === 'en' ? 'Quotation' : 
-                   translation.language === 'de' ? 'Angebot' :
-                   translation.language === 'fr' ? 'Devis' :
-                   translation.language === 'es' ? 'Cotización' :
-                   translation.language === 'ja' ? '見積書' :
-                   '报价单';
-      doc.text(title, 105, 20, null, null, 'center');
-      
-      // 公司信息
+      const title = isChinese ? '报价单' : 'Quotation';
+      doc.text(title, 105, 20, { align: 'center' });
+
+      // 公司信息 (简化示例)
       doc.setFontSize(12);
-      doc.text(dataToExport.company_name, 20, 35);
-      const addressLabel = translation.language === 'en' ? 'Address: ' : 
-                          translation.language === 'de' ? 'Adresse: ' :
-                          translation.language === 'fr' ? 'Adresse: ' :
-                          translation.language === 'es' ? 'Dirección: ' :
-                          translation.language === 'ja' ? '住所: ' :
-                          '地址: ';
-      doc.text(`${addressLabel}${dataToExport.company_address}`, 20, 45);
-      const phoneLabel = translation.language === 'en' ? 'Phone: ' : 
-                        translation.language === 'de' ? 'Telefon: ' :
-                        translation.language === 'fr' ? 'Téléphone: ' :
-                        translation.language === 'es' ? 'Teléfono: ' :
-                        translation.language === 'ja' ? '電話: ' :
-                        '电话: ';
-      doc.text(`${phoneLabel}${dataToExport.company_phone}`, 20, 55);
-      const emailLabel = translation.language === 'en' ? 'Email: ' : 
-                        translation.language === 'de' ? 'E-Mail: ' :
-                        translation.language === 'fr' ? 'Email: ' :
-                        translation.language === 'es' ? 'Correo electrónico: ' :
-                        translation.language === 'ja' ? 'メール: ' :
-                        '邮箱: ';
-      doc.text(`${emailLabel}${dataToExport.company_email}`, 20, 65);
+      doc.text(dataToExport.company_name || '', 20, 35);
+      doc.text(dataToExport.company_address || '', 20, 45);
+
+      // 客户信息 (简化示例)
+      doc.text(`客户: ${customers?.find(c => c.id === quotation.customer_id)?.company_name || 'N/A'}`, 20, 85);
       
-      // 报价单信息
-      doc.setFontSize(10);
-      const numberLabel = translation.language === 'en' ? 'Quotation No: ' : 
-                         translation.language === 'de' ? 'Angebots-Nr: ' :
-                         translation.language === 'fr' ? 'N° Devis: ' :
-                         translation.language === 'es' ? 'N° Cotización: ' :
-                         translation.language === 'ja' ? '見積番号: ' :
-                         '报价单号: ';
-      doc.text(`${numberLabel}${quotation.quotation_number}`, 120, 35);
-      const dateLabel = translation.language === 'en' ? 'Date: ' : 
-                       translation.language === 'de' ? 'Datum: ' :
-                       translation.language === 'fr' ? 'Date: ' :
-                       translation.language === 'es' ? 'Fecha: ' :
-                       translation.language === 'ja' ? '日付: ' :
-                       '日期: ';
-      doc.text(`${dateLabel}${new Date(quotation.created_at).toLocaleDateString('zh-CN')}`, 120, 45);
-      const validLabel = translation.language === 'en' ? 'Valid Until: ' : 
-                        translation.language === 'de' ? 'Gültig bis: ' :
-                        translation.language === 'fr' ? 'Valable jusqu\'au: ' :
-                        translation.language === 'es' ? 'Válido hasta: ' :
-                        translation.language === 'ja' ? '有効期限: ' :
-                        '有效期至: ';
-      doc.text(`${validLabel}${quotation.valid_until || 'N/A'}`, 120, 55);
-      const statusLabel = translation.language === 'en' ? 'Status: ' : 
-                         translation.language === 'de' ? 'Status: ' :
-                         translation.language === 'fr' ? 'Statut: ' :
-                         translation.language === 'es' ? 'Estado: ' :
-                         translation.language === 'ja' ? '状態: ' :
-                         '状态: ';
-      doc.text(`${statusLabel}${quotation.status}`, 120, 65);
-      
-      // 客户信息
-      const customer = customers?.find(c => c.id === quotation.customer_id);
-      const customerLabel = translation.language === 'en' ? 'Customer: ' : 
-                           translation.language === 'de' ? 'Kunde: ' :
-                           translation.language === 'fr' ? 'Client: ' :
-                           translation.language === 'es' ? 'Cliente: ' :
-                           translation.language === 'ja' ? '顧客: ' :
-                           '客户: ';
-      doc.text(`${customerLabel}${customer?.company_name || 'N/A'}`, 20, 85);
-      
-      // 表格标题
-      const startY = 100;
-      doc.setFillColor(240, 240, 240);
-      doc.rect(20, startY, 170, 10, 'F');
-      
-      const indexLabel = translation.language === 'en' ? 'No.' : 
-                        translation.language === 'de' ? 'Nr.' :
-                        translation.language === 'fr' ? 'N°' :
-                        translation.language === 'es' ? 'N°' :
-                        translation.language === 'ja' ? '番号' :
-                        '序号';
-      const descLabel = translation.language === 'en' ? 'Description' : 
-                       translation.language === 'de' ? 'Beschreibung' :
-                       translation.language === 'fr' ? 'Description' :
-                       translation.language === 'es' ? 'Descripción' :
-                       translation.language === 'ja' ? '説明' :
-                       '产品描述';
-      const qtyLabel = translation.language === 'en' ? 'Qty' : 
-                      translation.language === 'de' ? 'Menge' :
-                      translation.language === 'fr' ? 'Qté' :
-                      translation.language === 'es' ? 'Cant.' :
-                      translation.language === 'ja' ? '数量' :
-                      '数量';
-      const priceLabel = translation.language === 'en' ? 'Unit Price' : 
-                        translation.language === 'de' ? 'Stückpreis' :
-                        translation.language === 'fr' ? 'Prix unitaire' :
-                        translation.language === 'es' ? 'Precio unitario' :
-                        translation.language === 'ja' ? '単価' :
-                        '单价';
-      const totalLabel = translation.language === 'en' ? 'Total' : 
-                        translation.language === 'de' ? 'Gesamt' :
-                        translation.language === 'fr' ? 'Total' :
-                        translation.language === 'es' ? 'Total' :
-                        translation.language === 'ja' ? '合計' :
-                        '总价';
-      
-      doc.text(indexLabel, 25, startY + 7);
-      doc.text(descLabel, 40, startY + 7);
-      doc.text(qtyLabel, 100, startY + 7);
-      doc.text(priceLabel, 120, startY + 7);
-      doc.text(totalLabel, 150, startY + 7);
-      
-      // 表格内容
-      let currentY = startY + 10;
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i];
-        doc.text((i + 1).toString(), 25, currentY + 7);
-        doc.text(item.description, 40, currentY + 7);
-        doc.text(item.quantity.toString(), 100, currentY + 7);
-        doc.text(`${quotation.currency} ${item.unit_price.toFixed(2)}`, 120, currentY + 7);
-        doc.text(`${quotation.currency} ${item.total_price.toFixed(2)}`, 150, currentY + 7);
-        currentY += 10;
-        
-        // 如果有产品图片，添加到PDF中
-        if (item.product_id) {
-          const product = products?.find(p => p.id === item.product_id);
-          if (product && product.image_url) {
-            try {
-              // 这里需要实际实现图片添加逻辑
-              // 由于在浏览器环境中无法直接加载图片，这里仅作示意
-              // 实际实现需要使用html2canvas或其他方式将图片转换为dataURL
-            } catch (imgError) {
-              console.warn('图片加载失败:', imgError);
-            }
-          }
+      // 使用 jspdf-autotable 创建表格
+      const head = [
+          isChinese ? ['序号', '产品描述', '数量', '单价', '总价'] : ['No.', 'Description', 'Qty', 'Unit Price', 'Total']
+      ];
+      const body = quotation.items.map((item, index) => [
+        index + 1,
+        item.description,
+        item.quantity,
+        `${quotation.currency} ${item.unit_price.toFixed(2)}`,
+        `${quotation.currency} ${item.total_price.toFixed(2)}`
+      ]);
+
+      doc.autoTable({
+        startY: 100,
+        head: head,
+        body: body,
+        styles: {
+          font: isChinese ? "NotoSansSC" : "helvetica", // 为表格动态设置字体
+          fontStyle: 'normal',
+        },
+        headStyles: {
+          fillColor: [240, 240, 240],
+          textColor: 0
         }
-      }
-      
+      });
+
+      const finalY = doc.lastAutoTable.finalY; // 获取表格结束的位置
+
       // 总计
-      doc.setLineWidth(0.5);
-      doc.line(120, currentY, 190, currentY);
-      const totalLabelFinal = translation.language === 'en' ? 'Total: ' : 
-                             translation.language === 'de' ? 'Gesamt: ' :
-                             translation.language === 'fr' ? 'Total: ' :
-                             translation.language === 'es' ? 'Total: ' :
-                             translation.language === 'ja' ? '合計: ' :
-                             '总计: ';
-      doc.text(totalLabelFinal, 120, currentY + 10);
-      doc.text(`${quotation.currency} ${quotation.total_amount.toFixed(2)}`, 150, currentY + 10);
-      
-      // 备注
-      if (dataToExport.notes) {
-        const notesLabel = translation.language === 'en' ? 'Notes: ' : 
-                          translation.language === 'de' ? 'Anmerkungen: ' :
-                          translation.language === 'fr' ? 'Notes: ' :
-                          translation.language === 'es' ? 'Notas: ' :
-                          translation.language === 'ja' ? '備考: ' :
-                          '备注: ';
-        doc.text(`${notesLabel}${dataToExport.notes}`, 20, currentY + 30);
-      }
-      
-      // 保存PDF
-      const filename = translation.language === 'en' ? 
-        `Quotation-${quotation.quotation_number}.pdf` : 
-        translation.language === 'de' ? 
-        `Angebot-${quotation.quotation_number}.pdf` : 
-        translation.language === 'fr' ? 
-        `Devis-${quotation.quotation_number}.pdf` : 
-        translation.language === 'es' ? 
-        `Cotización-${quotation.quotation_number}.pdf` : 
-        translation.language === 'ja' ? 
-        `見積書-${quotation.quotation_number}.pdf` : 
-        `报价单-${quotation.quotation_number}.pdf`;
+      doc.setFontSize(12);
+      const totalLabel = isChinese ? '总计:' : 'Total:';
+      doc.text(totalLabel, 120, finalY + 15);
+      doc.text(`${quotation.currency} ${quotation.total_amount.toFixed(2)}`, 150, finalY + 15);
+
+      // 保存文件
+      const filename = `${isChinese ? '报价单' : 'Quotation'}-${quotation.quotation_number}.pdf`;
       doc.save(filename);
-      toast.success('PDF导出成功');
+      toast.success('PDF 导出成功！');
+
     } catch (error) {
-      toast.error('导出失败: ' + error.message);
+      console.error("导出PDF时发生严重错误:", error);
+      toast.error(`导出失败: ${error.message}`);
     }
   };
 
@@ -379,7 +254,7 @@ const QuotationView = ({
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={() => handleExportPDF(quotation, translation.language !== 'zh')}
+                onClick={() => handleExportPDF(quotation)}
               >
                 <Download className="mr-2 h-4 w-4" />
                 导出PDF
@@ -921,7 +796,7 @@ const QuotationView = ({
                translation.language === 'ja' ? '閉じる' :
                '关闭'}
             </Button>
-            <Button onClick={() => handleExportPDF(quotation, translation.language !== 'zh')}>
+            <Button onClick={() => handleExportPDF(quotation)}>
               <Download className="mr-2 h-4 w-4" />
               {translation.language === 'en' ? 'Export PDF' : 
                translation.language === 'de' ? 'PDF exportieren' :
