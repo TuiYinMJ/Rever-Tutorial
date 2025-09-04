@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { SelectItem, Select, SelectContent, SelectValue, SelectTrigger } from '@/components/ui/select';
 import { Languages, Edit, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { addChineseFont } from '../font'; 
+import { notoSansSCNormal } from '../font'; // 导入中文字体
 
 const QuotationView = ({ 
   isOpen, 
@@ -155,8 +155,19 @@ const QuotationView = ({
       // 字体加载与诊断
       if (isChinese) {
         console.log("检测到中文，正在尝试加载自定义字体...");
-        addChineseFont(doc);
-        doc.setFont("SourceHanSans");
+        try {
+          if (!notoSansSCNormal || notoSansSCNormal.length < 1000) {
+            throw new Error("字体数据 (notoSansSCNormal) 无效或过短。");
+          }
+          doc.addFileToVFS("NotoSansSC-normal.ttf", notoSansSCNormal);
+          doc.addFont("NotoSansSC-normal.ttf", "NotoSansSC", "normal");
+          doc.setFont("NotoSansSC");
+          console.log("自定义中文字体加载成功。");
+        } catch (fontError) {
+          console.error("加载自定义字体时出错:", fontError);
+          toast.error(`字体加载失败: ${fontError.message}，PDF可能无法正确显示中文。`);
+          // 即使字体加载失败，也继续尝试导出，但中文会是乱码
+        }
       } else {
         // 对于非中文，明确设置使用 jsPDF 的内置字体
         doc.setFont("helvetica");
